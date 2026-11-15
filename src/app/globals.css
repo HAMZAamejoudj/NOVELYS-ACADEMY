@@ -25,16 +25,18 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Bulletproof Print Isolation: Only print the receipt card */
+/* Bulletproof Print Isolation: Only print the receipt card without browser headers/footers */
 @media print {
   @page {
-    size: A4 portrait;
-    margin: 10mm;
+    size: auto;
+    margin: 0mm !important;
   }
 
-  body {
+  html, body {
     background: #ffffff !important;
     color: #000000 !important;
+    margin: 0 !important;
+    padding: 12mm 15mm !important;
   }
 
   /* Hide everything in the document by default */

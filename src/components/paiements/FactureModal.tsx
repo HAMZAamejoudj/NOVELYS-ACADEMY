@@ -52,11 +52,11 @@ export function FactureModal({
       <html>
         <head>
           <meta charset="utf-8" />
-          <title>Reçu de Paiement - Novelys Academy (${recuNum})</title>
+          <title></title>
           <style>
             @page {
-              size: A4 portrait;
-              margin: 12mm;
+              size: auto;
+              margin: 0mm !important;
             }
             * {
               box-sizing: border-box;
@@ -64,10 +64,11 @@ export function FactureModal({
               padding: 0;
               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             }
-            body {
+            html, body {
               background: #ffffff;
               color: #1e293b;
-              padding: 10px;
+              margin: 0 !important;
+              padding: 12mm 15mm !important;
             }
             .receipt-card {
               max-width: 720px;
