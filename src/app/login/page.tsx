@@ -42,9 +42,8 @@ export default function LoginPage() {
       if (data.user) {
         setSuccessMessage('Connexion réussie ! Redirection en cours...');
         setTimeout(() => {
-          router.push('/');
-          router.refresh();
-        }, 800);
+          window.location.href = '/';
+        }, 600);
       }
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : 'Une erreur inattendue est survenue.');
