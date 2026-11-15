@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { X, Printer, Download, Check } from 'lucide-react';
+import { X } from 'lucide-react';
 import { FaCheck, FaReceipt, FaPrint } from 'react-icons/fa6';
 import { formatDH, formatDate } from '../../lib/utils';
 import { Paiement, Etudiant, Groupe } from '../../types';
@@ -24,21 +24,417 @@ export function FactureModal({
 }: FactureModalProps) {
   if (!isOpen || !paiement) return null;
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   const recuNum = paiement.recuNumero || `REC-2026-${paiement.id.slice(-4)}`;
   const dateFormatted = paiement.datePaiement
     ? formatDate(paiement.datePaiement)
     : formatDate(new Date().toISOString());
 
+  const handlePrint = () => {
+    // Create an isolated iframe for clean, receipt-only printing
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) {
+      window.print();
+      return;
+    }
+
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Reçu de Paiement - Novelys Academy (${recuNum})</title>
+          <style>
+            @page {
+              size: A4 portrait;
+              margin: 12mm;
+            }
+            * {
+              box-sizing: border-box;
+              margin: 0;
+              padding: 0;
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            }
+            body {
+              background: #ffffff;
+              color: #1e293b;
+              padding: 10px;
+            }
+            .receipt-card {
+              max-width: 720px;
+              margin: 0 auto;
+              border: 1px solid #cbd5e1;
+              border-radius: 14px;
+              padding: 28px;
+              background: #ffffff;
+            }
+            .header-row {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              border-bottom: 2px solid #e2e8f0;
+              padding-bottom: 18px;
+              margin-bottom: 20px;
+            }
+            .brand-left {
+              display: flex;
+              align-items: center;
+              gap: 14px;
+            }
+            .brand-logo {
+              width: 58px;
+              height: 58px;
+              object-fit: contain;
+              border: 1px solid #e2e8f0;
+              border-radius: 10px;
+              padding: 3px;
+            }
+            .brand-title {
+              font-size: 19px;
+              font-weight: 800;
+              color: #0f172a;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            .brand-slogan {
+              font-size: 11px;
+              font-weight: 700;
+              color: #0f766e;
+              letter-spacing: 1px;
+            }
+            .brand-sub {
+              font-size: 11px;
+              color: #64748b;
+              margin-top: 2px;
+            }
+            .meta-right {
+              text-align: right;
+            }
+            .badge-num {
+              display: inline-block;
+              background: #f1f5f9;
+              border: 1px solid #cbd5e1;
+              border-radius: 6px;
+              padding: 4px 10px;
+              font-family: monospace;
+              font-size: 12px;
+              font-weight: 700;
+              color: #0f172a;
+              margin-bottom: 5px;
+            }
+            .meta-text {
+              font-size: 11px;
+              color: #64748b;
+              margin-top: 3px;
+            }
+            .meta-text strong {
+              color: #1e293b;
+            }
+            .client-box {
+              background: #f8fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 10px;
+              padding: 16px;
+              margin-bottom: 20px;
+            }
+            .client-header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              border-bottom: 1px solid #e2e8f0;
+              padding-bottom: 6px;
+              margin-bottom: 10px;
+            }
+            .client-title {
+              font-size: 11px;
+              font-weight: 800;
+              color: #64748b;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            .tag-inscrit {
+              background: #ccfbf1;
+              color: #0f766e;
+              font-size: 10px;
+              font-weight: 700;
+              padding: 2px 7px;
+              border-radius: 4px;
+              border: 1px solid #99f6e4;
+            }
+            .client-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 10px;
+            }
+            .field-label {
+              font-size: 10px;
+              color: #94a3b8;
+              margin-bottom: 1px;
+            }
+            .field-val-bold {
+              font-size: 13px;
+              font-weight: 700;
+              color: #0f172a;
+            }
+            .field-val {
+              font-size: 12px;
+              font-weight: 600;
+              color: #334155;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              border: 1px solid #e2e8f0;
+              border-radius: 10px;
+              overflow: hidden;
+              margin-bottom: 20px;
+            }
+            th {
+              background: #f1f5f9;
+              text-align: left;
+              padding: 10px 12px;
+              font-size: 11px;
+              font-weight: 700;
+              color: #475569;
+              text-transform: uppercase;
+              border-bottom: 1px solid #e2e8f0;
+            }
+            th.text-right {
+              text-align: right;
+            }
+            td {
+              padding: 12px;
+              font-size: 12px;
+              color: #1e293b;
+              border-bottom: 1px solid #f1f5f9;
+            }
+            td.text-right {
+              text-align: right;
+              font-weight: 800;
+              font-family: monospace;
+              font-size: 13px;
+            }
+            .bottom-summary {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              gap: 16px;
+              margin-bottom: 26px;
+            }
+            .stamp-box {
+              border: 2px dashed #10b981;
+              background: #ecfdf5;
+              border-radius: 10px;
+              padding: 10px 16px;
+              text-align: center;
+              transform: rotate(-2deg);
+            }
+            .stamp-title {
+              color: #047857;
+              font-weight: 800;
+              font-size: 12px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            .stamp-sub {
+              color: #059669;
+              font-size: 10px;
+              font-weight: 500;
+              margin-top: 1px;
+            }
+            .totals-box {
+              width: 220px;
+              background: #f8fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 10px;
+              padding: 12px;
+              font-size: 12px;
+            }
+            .totals-row {
+              display: flex;
+              justify-content: space-between;
+              color: #64748b;
+              margin-bottom: 5px;
+            }
+            .totals-row.grand {
+              border-top: 1px solid #cbd5e1;
+              padding-top: 6px;
+              margin-top: 6px;
+              font-weight: 800;
+              color: #0f172a;
+              font-size: 13px;
+            }
+            .signatures-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 30px;
+              margin-top: 24px;
+              padding-top: 20px;
+              border-top: 1px solid #e2e8f0;
+              text-align: center;
+            }
+            .sig-title {
+              font-size: 11px;
+              font-weight: 600;
+              color: #475569;
+              margin-bottom: 40px;
+            }
+            .sig-line {
+              width: 130px;
+              border-bottom: 1px dashed #94a3b8;
+              margin: 0 auto;
+            }
+            .footer-legal {
+              text-align: center;
+              font-size: 10px;
+              color: #94a3b8;
+              margin-top: 24px;
+              padding-top: 14px;
+              border-top: 1px solid #f1f5f9;
+              line-height: 1.5;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="receipt-card">
+            <!-- Header -->
+            <div class="header-row">
+              <div class="brand-left">
+                <img src="/logo.png" alt="Logo" class="brand-logo" />
+                <div>
+                  <div class="brand-title">NOVELYS ACADEMY</div>
+                  <div class="brand-slogan">GRANDIR • APPRENDRE • RÉUSSIR</div>
+                  <div class="brand-sub">Centre de Soutien Scolaire & Perfectionnement</div>
+                </div>
+              </div>
+              <div class="meta-right">
+                <div class="badge-num">N° ${recuNum}</div>
+                <div class="meta-text">Date d'émission : <strong>${dateFormatted}</strong></div>
+                <div class="meta-text">Mode de règlement : <strong>${paiement.modePaiement}</strong></div>
+              </div>
+            </div>
+
+            <!-- Client Info -->
+            <div class="client-box">
+              <div class="client-header">
+                <div class="client-title">INFORMATIONS DU CLIENT / ÉLÈVE</div>
+                <div class="tag-inscrit">Élève Inscrit</div>
+              </div>
+              <div class="client-grid">
+                <div>
+                  <div class="field-label">Nom & Prénom de l'élève :</div>
+                  <div class="field-val-bold">${etudiant ? `${etudiant.nom} ${etudiant.prenom}` : 'Élève'}</div>
+                </div>
+                <div>
+                  <div class="field-label">Niveau Scolaire :</div>
+                  <div class="field-val">${etudiant?.niveau || groupe?.niveau || '2ème Bac'}</div>
+                </div>
+                <div>
+                  <div class="field-label">Téléphone Élève :</div>
+                  <div class="field-val">${etudiant?.telephone || 'Non renseigné'}</div>
+                </div>
+                <div>
+                  <div class="field-label">Contact Parent / Tuteur :</div>
+                  <div class="field-val-bold">${etudiant?.telephoneParent || 'Non renseigné'}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Table of Services -->
+            <table>
+              <thead>
+                <tr>
+                  <th>Désignation</th>
+                  <th>Matière</th>
+                  <th>Période</th>
+                  <th class="text-right">Montant</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <strong>Cotisation Mensuelle de Soutien</strong><br>
+                    <span style="font-size:10px; color:#64748b;">Groupe : ${groupe?.nom || 'Groupe Standard'}</span>
+                  </td>
+                  <td>${groupe?.matiere || 'Matière'}</td>
+                  <td><strong>${paiement.mois}</strong></td>
+                  <td class="text-right">${formatDH(paiement.montant)}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Totals & Stamp -->
+            <div class="bottom-summary">
+              <div class="stamp-box">
+                <div class="stamp-title">✓ RÉGLÉ - REÇU OFFICIEL</div>
+                <div class="stamp-sub">Paiement validé par l'administration</div>
+              </div>
+              <div class="totals-box">
+                <div class="totals-row">
+                  <span>Total Facturé :</span>
+                  <strong>${formatDH(paiement.montant)}</strong>
+                </div>
+                <div class="totals-row">
+                  <span>Montant Réglé :</span>
+                  <strong style="color:#059669;">${formatDH(paiement.montant)}</strong>
+                </div>
+                <div class="totals-row grand">
+                  <span>Reste à Payer :</span>
+                  <span>0.00 DH</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Signatures -->
+            <div class="signatures-grid">
+              <div>
+                <div class="sig-title">Signature de l'Élève / Parent</div>
+                <div class="sig-line"></div>
+              </div>
+              <div>
+                <div class="sig-title">Cachet & Signature du Centre</div>
+                <div class="sig-line"></div>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer-legal">
+              <strong>NOVELYS ACADEMY — Centre de Soutien Scolaire</strong><br>
+              Avenue Hassan II, Rabat • Téléphone : 0537-889900 • contact@novelys.ma<br>
+              <em>Ce reçu fait foi de paiement. Merci pour votre confiance.</em>
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    // Trigger print from the isolated iframe
+    setTimeout(() => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+      setTimeout(() => {
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      }, 1000);
+    }, 200);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-2 sm:p-4 print:p-0 print:bg-white print:static print:inset-auto">
       {/* Modal Dialog Card */}
       <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[94vh] flex flex-col shadow-2xl border border-slate-700/50 overflow-hidden print:border-none print:shadow-none print:max-h-none print:h-auto print:w-full">
-        
-        {/* Pinned Sticky Header Bar (Always visible at top) */}
+        {/* Pinned Sticky Header Bar */}
         <div className="shrink-0 px-4 sm:px-6 py-3.5 bg-slate-900 border-b border-slate-800 text-white flex items-center justify-between gap-3 z-30 print:hidden">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-400 flex items-center justify-center font-bold">
@@ -249,7 +645,7 @@ export function FactureModal({
           </div>
         </div>
 
-        {/* Pinned Bottom Action Footer (Always visible at bottom) */}
+        {/* Pinned Bottom Action Footer */}
         <div className="shrink-0 px-6 py-3.5 bg-white border-t border-slate-200 flex items-center justify-between gap-3 z-30 print:hidden">
           <button
             onClick={onClose}
@@ -268,7 +664,6 @@ export function FactureModal({
             <span>Imprimer la Facture (A4 / Reçu)</span>
           </button>
         </div>
-
       </div>
     </div>
   );

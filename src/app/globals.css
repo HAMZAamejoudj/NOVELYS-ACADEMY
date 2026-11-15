@@ -25,23 +25,42 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Print Optimization for Factures / Receipts */
+/* Bulletproof Print Isolation: Only print the receipt card */
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
   body {
     background: #ffffff !important;
     color: #000000 !important;
   }
 
-  aside, header, nav, .no-print, [class*="print:hidden"] {
-    display: none !important;
+  /* Hide everything in the document by default */
+  body * {
+    visibility: hidden !important;
   }
 
+  /* Only make the receipt and its descendants visible */
+  #printable-receipt,
+  #printable-receipt * {
+    visibility: visible !important;
+  }
+
+  /* Pin the receipt at top-left of the printed paper */
   #printable-receipt {
-    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
     width: 100% !important;
+    max-width: 100% !important;
     margin: 0 !important;
-    padding: 1cm !important;
-    border: none !important;
+    padding: 15px !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
     box-shadow: none !important;
+    z-index: 999999 !important;
   }
 }
