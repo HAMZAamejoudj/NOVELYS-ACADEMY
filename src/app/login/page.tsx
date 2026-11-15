@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '../../lib/supabase/client';
 import { FaLock, FaEnvelope, FaCircleCheck, FaTriangleExclamation, FaArrowRight } from 'react-icons/fa6';
 
+export const dynamic = 'force-dynamic';
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -14,8 +16,6 @@ export default function LoginPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  const supabase = createClient();
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
@@ -23,6 +23,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      const supabase = createClient();
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
