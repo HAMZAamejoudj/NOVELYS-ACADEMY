@@ -21,12 +21,15 @@ import {
 import { mockPaiements, mockEtudiants, mockGroupes } from '../../data/mockData';
 import { formatDH, formatDate } from '../../lib/utils';
 import { Paiement } from '../../types';
+import { FactureModal } from '../../components/paiements/FactureModal';
 
 export default function PaiementsPage() {
   const [paiementsList, setPaiementsList] = useState<Paiement[]>(mockPaiements);
   const [filterStatut, setFilterStatut] = useState<'all' | 'paye' | 'en_retard' | 'en_attente'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPaiementForFacture, setSelectedPaiementForFacture] = useState<Paiement | null>(null);
+  const [isFactureModalOpen, setIsFactureModalOpen] = useState(false);
 
   // Form
   const [etudiantId, setEtudiantId] = useState(mockEtudiants[0]?.id || '');
@@ -69,10 +72,14 @@ export default function PaiementsPage() {
 
     setPaiementsList([newPaiement, ...paiementsList]);
     setIsModalOpen(false);
+    // Open receipt immediately after registering payment
+    setSelectedPaiementForFacture(newPaiement);
+    setIsFactureModalOpen(true);
   };
 
-  const handlePrintReceipt = (recu: string) => {
-    alert(`Impression du reçu officiel ${recu} pour le parent d'élève.`);
+  const handleOpenFacture = (paiement: Paiement) => {
+    setSelectedPaiementForFacture(paiement);
+    setIsFactureModalOpen(true);
   };
 
   return (
@@ -249,11 +256,12 @@ export default function PaiementsPage() {
                       <div className="flex items-center justify-end gap-2">
                         {isPaye && (
                           <button
-                            onClick={() => handlePrintReceipt(p.recuNumero)}
-                            title="Imprimer Reçu de paiement"
-                            className="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+                            onClick={() => handleOpenFacture(p)}
+                            title="Imprimer la Facture / Reçu officiel"
+                            className="px-2.5 py-1.5 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-100 font-semibold text-xs transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs border border-teal-200/80"
                           >
-                            <Printer className="w-4 h-4" />
+                            <Printer className="w-3.5 h-3.5" />
+                            <span>Facture</span>
                           </button>
                         )}
 
@@ -377,6 +385,15 @@ export default function PaiementsPage() {
           </div>
         </div>
       )}
+
+      {/* Facture / Reçu Modal */}
+      <FactureModal
+        isOpen={isFactureModalOpen}
+        onClose={() => setIsFactureModalOpen(false)}
+        paiement={selectedPaiementForFacture}
+        etudiant={mockEtudiants.find((e) => e.id === selectedPaiementForFacture?.etudiantId) || null}
+        groupe={mockGroupes.find((g) => g.id === selectedPaiementForFacture?.groupeId) || null}
+      />
     </div>
   );
 }

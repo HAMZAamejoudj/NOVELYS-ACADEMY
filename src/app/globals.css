@@ -24,3 +24,24 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Print Optimization for Factures / Receipts */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  aside, header, nav, .no-print, [class*="print:hidden"] {
+    display: none !important;
+  }
+
+  #printable-receipt {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 1cm !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+}
