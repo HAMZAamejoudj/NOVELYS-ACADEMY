@@ -12,15 +12,19 @@ import {
   Sparkles,
   X,
 } from 'lucide-react';
-import { FaBookOpen, FaPlus } from 'react-icons/fa6';
-import { mockGroupes, mockProfesseurs, mockSalles, mockEtudiants } from '../../data/mockData';
+import { FaBookOpen, FaPlus, FaTrashCan, FaCircleCheck } from 'react-icons/fa6';
+import { mockProfesseurs, mockSalles, mockEtudiants } from '../../data/mockData';
 import { formatDH } from '../../lib/utils';
 import { Groupe } from '../../types';
 import { useMatieres } from '../../data/matieresStore';
+import { useGroupes } from '../../data/appStores';
+import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal';
 
 export default function GroupesPage() {
-  const [groupesList, setGroupesList] = useState<Groupe[]>(mockGroupes);
+  const { groupes: groupesList, addGroupe, deleteGroupe } = useGroupes();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const { matieres, addMatiere } = useMatieres();
   const [isAddingNewMatiere, setIsAddingNewMatiere] = useState(false);
   const [quickMatiereInput, setQuickMatiereInput] = useState('');
@@ -33,6 +37,11 @@ export default function GroupesPage() {
   const [salleId, setSalleId] = useState(mockSalles[0]?.id || '');
   const [capaciteMax, setCapaciteMax] = useState(20);
   const [tarifMensuel, setTarifMensuel] = useState(350);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
 
   const handleAddGroupe = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,8 +63,9 @@ export default function GroupesPage() {
       ],
     };
 
-    setGroupesList([newGrp, ...groupesList]);
+    addGroupe(newGrp);
     setIsModalOpen(false);
+    showToast(`Groupe « ${nom} » créé avec succès !`);
     setNom('');
   };
 
@@ -195,9 +205,23 @@ export default function GroupesPage() {
                   </span>
                 </div>
 
-                <button className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors">
-                  Gérer les élèves
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() =>
+                      setDeleteTarget({
+                        id: groupe.id,
+                        name: groupe.nom,
+                      })
+                    }
+                    title="Supprimer ce groupe"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                  >
+                    <FaTrashCan className="w-3.5 h-3.5" />
+                  </button>
+                  <button className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors">
+                    Gérer les élèves
+                  </button>
+                </div>
               </div>
             </div>
           );
@@ -380,6 +404,30 @@ export default function GroupesPage() {
           </div>
         </div>
       )}
+
+      {/* Floating Success Toast */}
+      {toastMessage && (
+        <div className="fixed top-20 right-6 z-50 flex items-center gap-2.5 px-4 py-3 bg-emerald-600 text-white text-sm font-semibold rounded-xl shadow-lg animate-in slide-in-from-top-3 duration-200">
+          <FaCircleCheck className="w-4 h-4 text-emerald-200 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={!!deleteTarget}
+        title="Supprimer le Groupe"
+        itemType="le groupe"
+        itemName={deleteTarget?.name}
+        onConfirm={() => {
+          if (deleteTarget) {
+            deleteGroupe(deleteTarget.id);
+            showToast(`Le groupe « ${deleteTarget.name} » a été supprimé avec succès.`);
+            setDeleteTarget(null);
+          }
+        }}
+        onClose={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

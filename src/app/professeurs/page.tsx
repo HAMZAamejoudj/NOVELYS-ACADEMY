@@ -12,15 +12,19 @@ import {
   TrendingUp,
   X,
 } from 'lucide-react';
-import { FaUserGraduate, FaCircleCheck } from 'react-icons/fa6';
-import { mockProfesseurs, mockGroupes, mockEtudiants } from '../../data/mockData';
+import { FaUserGraduate, FaCircleCheck, FaTrashCan } from 'react-icons/fa6';
+import { mockGroupes, mockEtudiants } from '../../data/mockData';
 import { formatDH } from '../../lib/utils';
 import { Professeur } from '../../types';
 import { useMatieres } from '../../data/matieresStore';
+import { useProfesseurs } from '../../data/appStores';
+import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal';
 
 export default function ProfesseursPage() {
-  const [profsList, setProfsList] = useState<Professeur[]>(mockProfesseurs);
+  const { professeurs: profsList, addProfesseur, deleteProfesseur } = useProfesseurs();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const { matieres, addMatiere } = useMatieres();
   const [isAddingNewMatiere, setIsAddingNewMatiere] = useState(false);
   const [quickMatiereInput, setQuickMatiereInput] = useState('');
@@ -32,6 +36,11 @@ export default function ProfesseursPage() {
   const [email, setEmail] = useState('');
   const [matiere, setMatiere] = useState('Mathématiques');
   const [pourcentage, setPourcentage] = useState(60);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
 
   const handleAddProf = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,8 +58,9 @@ export default function ProfesseursPage() {
       groupesIds: [],
     };
 
-    setProfsList([newProf, ...profsList]);
+    addProfesseur(newProf);
     setIsModalOpen(false);
+    showToast(`Professeur Pr. ${prenom} ${nom} ajouté avec succès !`);
     setNom('');
     setPrenom('');
     setTelephone('');
@@ -116,22 +126,37 @@ export default function ProfesseursPage() {
                     </div>
                   </div>
 
-                  <span
-                    className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1 ${
-                      prof.statut === 'actif'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-slate-100 text-slate-600'
-                    }`}
-                  >
-                    {prof.statut === 'actif' ? (
-                      <>
-                        <FaCircleCheck className="w-3 h-3 text-emerald-600" />
-                        Actif
-                      </>
-                    ) : (
-                      'Inactif'
-                    )}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1 ${
+                        prof.statut === 'actif'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      {prof.statut === 'actif' ? (
+                        <>
+                          <FaCircleCheck className="w-3 h-3 text-emerald-600" />
+                          Actif
+                        </>
+                      ) : (
+                        'Inactif'
+                      )}
+                    </span>
+
+                    <button
+                      onClick={() =>
+                        setDeleteTarget({
+                          id: prof.id,
+                          name: `Pr. ${prof.prenom} ${prof.nom}`,
+                        })
+                      }
+                      title="Supprimer ce professeur"
+                      className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                    >
+                      <FaTrashCan className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 {prof.experience && (
@@ -402,6 +427,30 @@ export default function ProfesseursPage() {
           </div>
         </div>
       )}
+
+      {/* Floating Success Toast */}
+      {toastMessage && (
+        <div className="fixed top-20 right-6 z-50 flex items-center gap-2.5 px-4 py-3 bg-emerald-600 text-white text-sm font-semibold rounded-xl shadow-lg animate-in slide-in-from-top-3 duration-200">
+          <FaCircleCheck className="w-4 h-4 text-emerald-200 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={!!deleteTarget}
+        title="Supprimer l'Enseignant"
+        itemType="le professeur"
+        itemName={deleteTarget?.name}
+        onConfirm={() => {
+          if (deleteTarget) {
+            deleteProfesseur(deleteTarget.id);
+            showToast(`${deleteTarget.name} a été retiré avec succès.`);
+            setDeleteTarget(null);
+          }
+        }}
+        onClose={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

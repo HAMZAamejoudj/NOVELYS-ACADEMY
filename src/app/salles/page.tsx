@@ -15,14 +15,18 @@ import {
   SquareDashed,
   X,
 } from 'lucide-react';
-import { FaSchool } from 'react-icons/fa6';
-import { mockSalles, mockSeancesDuJour, mockGroupes, mockProfesseurs } from '../../data/mockData';
+import { FaSchool, FaTrashCan, FaCircleCheck } from 'react-icons/fa6';
+import { mockSeancesDuJour, mockGroupes, mockProfesseurs } from '../../data/mockData';
 import { Salle } from '../../types';
+import { useSalles } from '../../data/appStores';
+import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal';
 
 export default function SallesPage() {
-  const [sallesList, setSallesList] = useState<Salle[]>(mockSalles);
+  const { salles: sallesList, addSalle, updateSalle, deleteSalle } = useSalles();
   const [filterStatut, setFilterStatut] = useState<'all' | 'disponible' | 'occupee' | 'maintenance'>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Form
   const [nom, setNom] = useState('');
@@ -33,6 +37,11 @@ export default function SallesPage() {
     'Climatisation',
     'Tableau Blanc',
   ]);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
 
   const filteredSalles = sallesList.filter((s) => {
     if (filterStatut === 'all') return true;
@@ -52,24 +61,22 @@ export default function SallesPage() {
       statut: 'disponible',
     };
 
-    setSallesList([...sallesList, newSalle]);
+    addSalle(newSalle);
     setIsModalOpen(false);
+    showToast(`Salle « ${nom} » ajoutée avec succès !`);
     setNom('');
   };
 
   const toggleStatus = (id: string) => {
-    setSallesList((prev) =>
-      prev.map((s) => {
-        if (s.id !== id) return s;
-        const nextStatut =
-          s.statut === 'disponible'
-            ? 'occupee'
-            : s.statut === 'occupee'
-            ? 'maintenance'
-            : 'disponible';
-        return { ...s, statut: nextStatut };
-      })
-    );
+    const s = sallesList.find((item) => item.id === id);
+    if (!s) return;
+    const nextStatut =
+      s.statut === 'disponible'
+        ? 'occupee'
+        : s.statut === 'occupee'
+        ? 'maintenance'
+        : 'disponible';
+    updateSalle(id, { statut: nextStatut });
   };
 
   return (
@@ -156,36 +163,51 @@ export default function SallesPage() {
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => toggleStatus(salle.id)}
-                    title="Cliquer pour basculer l'état"
-                    className={`text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 transition-all cursor-pointer ${
-                      isDisponible
-                        ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                        : isOccupee
-                        ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
-                        : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-                    }`}
-                  >
-                    {isDisponible && (
-                      <>
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        Disponible
-                      </>
-                    )}
-                    {isOccupee && (
-                      <>
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                        Occupée
-                      </>
-                    )}
-                    {isMaintenance && (
-                      <>
-                        <Wrench className="w-3 h-3 text-slate-500" />
-                        Maintenance
-                      </>
-                    )}
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => toggleStatus(salle.id)}
+                      title="Cliquer pour basculer l'état"
+                      className={`text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 transition-all cursor-pointer ${
+                        isDisponible
+                          ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                          : isOccupee
+                          ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                          : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                      }`}
+                    >
+                      {isDisponible && (
+                        <>
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          Disponible
+                        </>
+                      )}
+                      {isOccupee && (
+                        <>
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                          Occupée
+                        </>
+                      )}
+                      {isMaintenance && (
+                        <>
+                          <Wrench className="w-3 h-3 text-slate-500" />
+                          Maintenance
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        setDeleteTarget({
+                          id: salle.id,
+                          name: salle.nom,
+                        })
+                      }
+                      title="Supprimer cette salle"
+                      className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                    >
+                      <FaTrashCan className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Capacity and Equipment */}
@@ -347,6 +369,30 @@ export default function SallesPage() {
           </div>
         </div>
       )}
+
+      {/* Floating Success Toast */}
+      {toastMessage && (
+        <div className="fixed top-20 right-6 z-50 flex items-center gap-2.5 px-4 py-3 bg-emerald-600 text-white text-sm font-semibold rounded-xl shadow-lg animate-in slide-in-from-top-3 duration-200">
+          <FaCircleCheck className="w-4 h-4 text-emerald-200 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={!!deleteTarget}
+        title="Supprimer la Salle"
+        itemType="la salle"
+        itemName={deleteTarget?.name}
+        onConfirm={() => {
+          if (deleteTarget) {
+            deleteSalle(deleteTarget.id);
+            showToast(`La salle « ${deleteTarget.name} » a été supprimée.`);
+            setDeleteTarget(null);
+          }
+        }}
+        onClose={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

@@ -17,29 +17,40 @@ import {
   FaCircleCheck,
   FaTriangleExclamation,
   FaClock,
+  FaTrashCan,
 } from 'react-icons/fa6';
-import { mockPaiements, mockEtudiants, mockGroupes } from '../../data/mockData';
 import { formatDH, formatDate } from '../../lib/utils';
 import { Paiement } from '../../types';
 import { FactureModal } from '../../components/paiements/FactureModal';
+import { usePaiements, useEtudiants, useGroupes } from '../../data/appStores';
+import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal';
 
 export default function PaiementsPage() {
-  const [paiementsList, setPaiementsList] = useState<Paiement[]>(mockPaiements);
+  const { paiements: paiementsList, addPaiement, deletePaiement } = usePaiements();
+  const { etudiants } = useEtudiants();
+  const { groupes } = useGroupes();
   const [filterStatut, setFilterStatut] = useState<'all' | 'paye' | 'en_retard' | 'en_attente'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPaiementForFacture, setSelectedPaiementForFacture] = useState<Paiement | null>(null);
   const [isFactureModalOpen, setIsFactureModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Form
-  const [etudiantId, setEtudiantId] = useState(mockEtudiants[0]?.id || '');
-  const [groupeId, setGroupeId] = useState(mockGroupes[0]?.id || '');
+  const [etudiantId, setEtudiantId] = useState(etudiants[0]?.id || '');
+  const [groupeId, setGroupeId] = useState(groupes[0]?.id || '');
   const [mois, setMois] = useState('Novembre 2026');
   const [montant, setMontant] = useState(350);
   const [modePaiement, setModePaiement] = useState<'Espèces' | 'Virement' | 'Chèque' | 'Application'>('Espèces');
 
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
   const filteredPaiements = paiementsList.filter((p) => {
-    const etudiant = mockEtudiants.find((e) => e.id === p.etudiantId);
+    const etudiant = etudiants.find((e) => e.id === p.etudiantId);
     const matchesSearch =
       `${etudiant?.nom} ${etudiant?.prenom} ${p.recuNumero} ${p.mois}`
         .toLowerCase()
@@ -60,8 +71,8 @@ export default function PaiementsPage() {
     e.preventDefault();
     const newPaiement: Paiement = {
       id: `pay-${Date.now()}`,
-      etudiantId,
-      groupeId,
+      etudiantId: etudiantId || etudiants[0]?.id || '',
+      groupeId: groupeId || groupes[0]?.id || '',
       mois,
       montant: Number(montant),
       datePaiement: new Date().toISOString().split('T')[0],
@@ -70,8 +81,9 @@ export default function PaiementsPage() {
       recuNumero: `REC-2026-${Math.floor(1000 + Math.random() * 9000)}`,
     };
 
-    setPaiementsList([newPaiement, ...paiementsList]);
+    addPaiement(newPaiement);
     setIsModalOpen(false);
+    showToast(`Règlement enregistré avec succès (${newPaiement.recuNumero}) !`);
     // Open receipt immediately after registering payment
     setSelectedPaiementForFacture(newPaiement);
     setIsFactureModalOpen(true);
@@ -182,8 +194,8 @@ export default function PaiementsPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredPaiements.map((p) => {
-                const etudiant = mockEtudiants.find((e) => e.id === p.etudiantId);
-                const groupe = mockGroupes.find((g) => g.id === p.groupeId);
+                const etudiant = etudiants.find((e) => e.id === p.etudiantId);
+                const groupe = groupes.find((g) => g.id === p.groupeId);
                 const isPaye = p.statut === 'paye';
                 const isEnRetard = p.statut === 'en_retard';
 
@@ -276,6 +288,21 @@ export default function PaiementsPage() {
                             <MessageCircle className="w-4 h-4" />
                           </a>
                         )}
+
+                        {/* Delete Payment Button */}
+                        <button
+                          onClick={() =>
+                            setDeleteTarget({
+                              id: p.id,
+                              name: `${p.recuNumero || 'Règlement'} (${p.mois} - ${etudiant ? `${etudiant.nom} ${etudiant.prenom}` : 'Élève'})`,
+                            })
+                          }
+                          title="Supprimer ce paiement"
+                          className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors flex items-center gap-1 px-2 text-xs font-semibold cursor-pointer"
+                        >
+                          <FaTrashCan className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Supprimer</span>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -308,7 +335,7 @@ export default function PaiementsPage() {
                   onChange={(e) => setEtudiantId(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500 bg-white"
                 >
-                  {mockEtudiants.map((et) => (
+                  {etudiants.map((et) => (
                     <option key={et.id} value={et.id}>
                       {et.nom} {et.prenom} ({et.niveau})
                     </option>
@@ -323,7 +350,7 @@ export default function PaiementsPage() {
                   onChange={(e) => setGroupeId(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500 bg-white"
                 >
-                  {mockGroupes.map((grp) => (
+                  {groupes.map((grp) => (
                     <option key={grp.id} value={grp.id}>
                       {grp.nom} ({formatDH(grp.tarifMensuel)})
                     </option>
@@ -391,8 +418,32 @@ export default function PaiementsPage() {
         isOpen={isFactureModalOpen}
         onClose={() => setIsFactureModalOpen(false)}
         paiement={selectedPaiementForFacture}
-        etudiant={mockEtudiants.find((e) => e.id === selectedPaiementForFacture?.etudiantId) || null}
-        groupe={mockGroupes.find((g) => g.id === selectedPaiementForFacture?.groupeId) || null}
+        etudiant={etudiants.find((e) => e.id === selectedPaiementForFacture?.etudiantId) || null}
+        groupe={groupes.find((g) => g.id === selectedPaiementForFacture?.groupeId) || null}
+      />
+
+      {/* Floating Success Toast */}
+      {toastMessage && (
+        <div className="fixed top-20 right-6 z-50 flex items-center gap-2.5 px-4 py-3 bg-emerald-600 text-white text-sm font-semibold rounded-xl shadow-lg animate-in slide-in-from-top-3 duration-200">
+          <FaCircleCheck className="w-4 h-4 text-emerald-200 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={!!deleteTarget}
+        title="Supprimer le Règlement"
+        itemType="le règlement"
+        itemName={deleteTarget?.name}
+        onConfirm={() => {
+          if (deleteTarget) {
+            deletePaiement(deleteTarget.id);
+            showToast(`Paiement supprimé avec succès.`);
+            setDeleteTarget(null);
+          }
+        }}
+        onClose={() => setDeleteTarget(null)}
       />
     </div>
   );

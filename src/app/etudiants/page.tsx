@@ -19,18 +19,22 @@ import {
   FaPenToSquare,
   FaUserGroup,
   FaCheck,
+  FaTrashCan,
 } from 'react-icons/fa6';
-import { mockEtudiants, mockGroupes } from '../../data/mockData';
+import { mockGroupes } from '../../data/mockData';
 import { formatDate } from '../../lib/utils';
 import { Etudiant, StatutEtudiant } from '../../types';
+import { useEtudiants } from '../../data/appStores';
+import { DeleteConfirmModal } from '../../components/common/DeleteConfirmModal';
 
 export default function EtudiantsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedNiveau, setSelectedNiveau] = useState('all');
-  const [etudiantsList, setEtudiantsList] = useState<Etudiant[]>(mockEtudiants);
+  const { etudiants, addEtudiant, updateEtudiant, deleteEtudiant } = useEtudiants();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Etudiant | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // New Student Form state
@@ -67,7 +71,7 @@ export default function EtudiantsPage() {
     }, 3500);
   };
 
-  const filteredEtudiants = etudiantsList.filter((etudiant) => {
+  const filteredEtudiants = etudiants.filter((etudiant) => {
     const matchesSearch =
       `${etudiant.nom} ${etudiant.prenom} ${etudiant.telephone} ${etudiant.telephoneParent}`
         .toLowerCase()
@@ -92,7 +96,7 @@ export default function EtudiantsPage() {
       statut: 'actif',
     };
 
-    setEtudiantsList([newStudent, ...etudiantsList]);
+    addEtudiant(newStudent);
     setIsAddModalOpen(false);
     showToast(`Élève ${newPrenom} ${newNom} inscrit avec succès !`);
     setNewNom('');
@@ -118,23 +122,16 @@ export default function EtudiantsPage() {
     e.preventDefault();
     if (!editingStudent) return;
 
-    const updatedList = etudiantsList.map((et) => {
-      if (et.id === editingStudent.id) {
-        return {
-          ...et,
-          nom: editNom,
-          prenom: editPrenom,
-          telephone: editTel,
-          telephoneParent: editTelParent,
-          niveau: editNiveau,
-          statut: editStatut,
-          groupesIds: editGroupesIds,
-        };
-      }
-      return et;
+    updateEtudiant(editingStudent.id, {
+      nom: editNom,
+      prenom: editPrenom,
+      telephone: editTel,
+      telephoneParent: editTelParent,
+      niveau: editNiveau,
+      statut: editStatut,
+      groupesIds: editGroupesIds,
     });
 
-    setEtudiantsList(updatedList);
     setIsEditModalOpen(false);
     showToast(`Modifications enregistrées pour ${editPrenom} ${editNom} !`);
     setEditingStudent(null);
@@ -349,6 +346,21 @@ export default function EtudiantsPage() {
                         >
                           <MessageCircle className="w-4 h-4" />
                         </a>
+
+                        {/* Delete Button */}
+                        <button
+                          onClick={() =>
+                            setDeleteTarget({
+                              id: etudiant.id,
+                              name: `${etudiant.prenom} ${etudiant.nom}`,
+                            })
+                          }
+                          title="Supprimer définitivement l'élève"
+                          className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors flex items-center gap-1 px-2.5 text-xs font-semibold cursor-pointer"
+                        >
+                          <FaTrashCan className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Supprimer</span>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -546,21 +558,39 @@ export default function EtudiantsPage() {
                 </select>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm font-semibold hover:bg-slate-50 cursor-pointer"
+                  onClick={() => {
+                    const target = {
+                      id: editingStudent.id,
+                      name: `${editingStudent.prenom} ${editingStudent.nom}`,
+                    };
+                    setIsEditModalOpen(false);
+                    setDeleteTarget(target);
+                  }}
+                  className="px-3.5 py-2 rounded-lg text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
-                  Annuler
+                  <FaTrashCan className="w-3.5 h-3.5" />
+                  <span>Supprimer cet élève</span>
                 </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow-xs flex items-center gap-1.5 cursor-pointer"
-                >
-                  <FaCheck className="w-3.5 h-3.5" />
-                  <span>Enregistrer les modifications</span>
-                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm font-semibold hover:bg-slate-50 cursor-pointer"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow-xs flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <FaCheck className="w-3.5 h-3.5" />
+                    <span>Enregistrer les modifications</span>
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -698,6 +728,22 @@ export default function EtudiantsPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={!!deleteTarget}
+        title="Supprimer l'Élève"
+        itemType="l'élève"
+        itemName={deleteTarget?.name}
+        onConfirm={() => {
+          if (deleteTarget) {
+            deleteEtudiant(deleteTarget.id);
+            showToast(`L'élève ${deleteTarget.name} a été supprimé avec succès.`);
+            setDeleteTarget(null);
+          }
+        }}
+        onClose={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
