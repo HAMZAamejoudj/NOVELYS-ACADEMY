@@ -28,7 +28,7 @@ const navItems = [
   { name: 'Étudiants', href: '/etudiants', icon: FaUsers },
   { name: 'Professeurs', href: '/professeurs', icon: FaUserGraduate },
   { name: 'Groupes & Classes', href: '/groupes', icon: FaBookOpen },
-  { name: 'Matières', href: '/parametres#matieres', icon: FaBookBookmark },
+  { name: 'Matières', href: '/matieres', icon: FaBookBookmark },
   { name: 'Salles & Disponibilité', href: '/salles', icon: FaSchool },
   { name: 'Emploi du Temps', href: '/planning', icon: FaCalendarDays },
   { name: 'Paiements & Reçus', href: '/paiements', icon: FaReceipt },

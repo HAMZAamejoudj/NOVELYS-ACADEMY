@@ -9,6 +9,7 @@ import {
   Plus,
   BookOpen,
 } from 'lucide-react';
+import Link from 'next/link';
 import {
   FaGear,
   FaCircleCheck,
@@ -18,6 +19,7 @@ import {
   FaXmark,
   FaBookBookmark,
   FaRotateLeft,
+  FaArrowRight,
 } from 'react-icons/fa6';
 import { useMatieres } from '../../data/matieresStore';
 
@@ -95,124 +97,31 @@ export default function ParametresPage() {
       )}
 
       {/* Section Gestion des Matières */}
-      <div id="matieres" className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
-              <FaBookBookmark className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <span>Gestion des Matières Enseignées</span>
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                  {matieres.length} matières actives
-                </span>
-              </h2>
-              <p className="text-xs text-slate-500">
-                Ajoutez, modifiez ou supprimez les matières disponibles pour les groupes et les professeurs.
-              </p>
-            </div>
+      <div id="matieres" className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center font-bold">
+            <FaBookBookmark className="w-5 h-5" />
           </div>
-
-          <button
-            onClick={resetToDefault}
-            className="text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
-            title="Rétablir les matières par défaut"
-          >
-            <FaRotateLeft className="w-3 h-3" />
-            <span>Réinitialiser par défaut</span>
-          </button>
+          <div>
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <span>Gestion des Matières Enseignées</span>
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
+                {matieres.length} matières actives
+              </span>
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Gérez le catalogue officiel des matières sur sa propre page dédiée.
+            </p>
+          </div>
         </div>
 
-        {/* Add Matière Form */}
-        <form onSubmit={handleAddMatiereSubmit} className="mt-4 flex flex-col sm:flex-row gap-2">
-          <input
-            type="text"
-            value={newMatiereInput}
-            onChange={(e) => setNewMatiereInput(e.target.value)}
-            placeholder="Nom de la nouvelle matière (ex: Informatique, SVT, Espagnol...)"
-            className="flex-1 px-3.5 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
-          />
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 shadow-xs cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Ajouter la Matière</span>
-          </button>
-        </form>
-
-        {/* Matieres Grid */}
-        <div className="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {matieres.map((mat) => {
-            const isEditing = editingMatiere === mat;
-
-            return (
-              <div
-                key={mat}
-                className="p-3.5 rounded-xl border border-slate-200/90 bg-slate-50/60 hover:bg-white hover:border-blue-300 transition-all flex items-center justify-between gap-3 shadow-2xs"
-              >
-                {isEditing ? (
-                  <div className="flex items-center gap-2 w-full">
-                    <input
-                      type="text"
-                      value={editMatiereValue}
-                      onChange={(e) => setEditMatiereValue(e.target.value)}
-                      className="flex-1 px-2.5 py-1 text-xs border border-blue-400 rounded-lg outline-none bg-white font-semibold text-slate-900"
-                      autoFocus
-                    />
-                    <button
-                      onClick={() => saveEditMatiere(mat)}
-                      className="p-1.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 cursor-pointer"
-                      title="Valider"
-                    >
-                      <FaCheck className="w-3 h-3" />
-                    </button>
-                    <button
-                      onClick={() => setEditingMatiere(null)}
-                      className="p-1.5 bg-slate-200 text-slate-700 rounded-md hover:bg-slate-300 cursor-pointer"
-                      title="Annuler"
-                    >
-                      <FaXmark className="w-3 h-3" />
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0" />
-                      <span className="text-xs font-semibold text-slate-800 truncate" title={mat}>
-                        {mat}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        onClick={() => startEditMatiere(mat)}
-                        title="Modifier le nom de cette matière"
-                        className="p-1.5 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
-                      >
-                        <FaPenToSquare className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (confirm(`Voulez-vous vraiment supprimer la matière "${mat}" ?`)) {
-                            deleteMatiere(mat);
-                            setMatiereFeedback(`Matière "${mat}" supprimée.`);
-                            setTimeout(() => setMatiereFeedback(null), 3000);
-                          }
-                        }}
-                        title="Supprimer cette matière"
-                        className="p-1.5 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                      >
-                        <FaTrashCan className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        <Link
+          href="/matieres"
+          className="px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center gap-2 shrink-0 cursor-pointer"
+        >
+          <span>Ouvrir la page Matières</span>
+          <FaArrowRight className="w-3.5 h-3.5" />
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
